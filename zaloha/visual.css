@@ -1,0 +1,182 @@
+/* Styl pro tělo stránky */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+html, body, #map {
+    height: 100%;
+}
+
+/* Styl nadpisu a podkladu */
+#header {
+    position: absolute;
+    top: 1%;
+    left: 8%;
+    transform: translateX(-50%);
+    background-color: #2A4D14; /* Tmavě zelená barva */
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    text-align: center;
+}
+
+#header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: bold;
+    color: #67E0A3; /* Světle zelená barva */
+}
+
+#header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: normal;
+    color: #A3D4C5; /* Jemná pastelová zelená */
+    opacity: 0.9;
+}
+
+/* Styl tlačítek */
+.find-location-btn, .coords-btn, .home-btn {
+    position: absolute;
+    right: 10px;
+    padding: 10px 15px;
+    cursor: pointer;
+    z-index: 1000;
+    border: none;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    color: #fff;
+}
+
+/* Barvy tlačítek */
+.find-location-btn {
+    bottom: 80px;
+    background: linear-gradient(45deg, #67E0A3, #317B22); /* Gradient z jemné a tmavé zelené */
+    color: #fff;
+}
+
+.find-location-btn:hover {
+    background: linear-gradient(45deg, #317B22, #67E0A3);
+    transform: scale(1.1);
+}
+
+.coords-btn {
+    bottom: 50px;
+    background: linear-gradient(45deg, #67E0A3, #2A4D14); /* Gradient z jemné a tmavší zelené */
+    color: #fff;
+}
+
+.coords-btn:hover {
+    background: linear-gradient(45deg, #2A4D14, #67E0A3);
+    transform: scale(1.1);
+}
+
+.home-btn {
+    bottom: 30px;
+    background: linear-gradient(45deg, #317B22, #2A4D14); /* Gradient z tmavší zelené */
+    color: #fff;
+}
+
+.home-btn:hover {
+    background: linear-gradient(45deg, #2A4D14, #317B22);
+    transform: scale(1.1);
+}
+
+/* Styl pro ikonu v menu vrstev (leaflet-control-layers) */
+.leaflet-control-layers-toggle {
+    background-image: url(menu.svg); /* Cesta k obrázku */
+    background-size: 50%; /* Zmenší obrázek na 50% jeho původní velikosti */
+    background-position: center;
+    width: 40px; /* Zvětšená šířka */
+    height: 40px; /* Zvětšená výška */
+    border-radius: 0; /* Zrušení kruhového tvaru */
+    cursor: pointer;
+    box-shadow: none; /* Zrušení stínu */
+    transition: all 0.3s ease;
+    background-color: transparent; /* Odstranění barvy pozadí */
+    border: none; /* Odstranění případného okraje */
+}
+
+/* Efekt při najetí myší */
+.leaflet-control-layers-toggle:hover {
+    transform: scale(1.1);
+    background-color: #2A4D14; /* Tmavě zelená při hoveru */
+}
+
+/* Styl menu pro podkladové mapy */
+.leaflet-control-layers {
+    font-family: Arial, sans-serif;
+    background-color: #317B22; /* Střední zelená barva pro pozadí */
+    border-radius: 10px; /* Zaoblené rohy */
+    overflow: hidden;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2); /* Jemný stín */
+    transition: all 0.3s ease; /* Plynulý přechod při interakci */
+}
+
+/* Zvětšení velikosti pro pohodlnější čtení */
+.leaflet-control-layers-expanded {
+    max-height: none; /* Odstranění limitu výšky */
+    overflow: visible; /* Skrytí rolovacího panelu */
+}
+
+/* Nadpisy vrstev */
+.leaflet-control-layers-base,
+.leaflet-control-layers-separator {
+    font-size: 16px; /* Zvýšení velikosti textu */
+    font-weight: bold;
+    background-color: #2A4D14; /* Tmavě zelená */
+    color: #67E0A3; /* Světle zelený text */
+    padding: 8px 12px;
+    border-bottom: none; /* Odstranění oddělovače */
+}
+
+/* Jednotlivé možnosti v menu */
+.leaflet-control-layers-overlays label {
+    display: block;
+    font-size: 15px; /* O něco větší text */
+    padding: 10px 12px; /* Zvětšení prostoru kolem textu */
+    color: #67E0A3; /* Světle zelený text */
+    background-color: #2A4D14; /* Tmavě zelená barva pro pozadí */
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    border-bottom: none; /* Odstranění spodního rámečku */
+}
+
+/* Efekt při najetí na jednotlivé možnosti */
+.leaflet-control-layers-overlays label:hover {
+    background-color: #317B22; /* Střední zelená při hoveru */
+    transform: scale(1.05); /* Mírné zvětšení při hoveru */
+    color: #fff; /* Bílý text při hoveru */
+}
+
+/* Zaškrtnuté políčko */
+.leaflet-control-layers-overlays input[type="checkbox"]:checked + span {
+    color: #A3D4C5; /* Jemná pastelová zelená */
+    font-weight: bold;
+}
+
+/* Animace při přepínání vrstev */
+.leaflet-control-layers label span {
+    transition: color 0.3s ease, font-weight 0.3s ease;
+}
+
+/* Změna barvy pozadí pro tlačítka zoom in a zoom out */
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+    background-color: #67E0A3; /* Jemná zelená barva pozadí */
+    color: #ffffff; /* Bílá barva textu */
+    border: none; /* Odstranění okrajů */
+    transition: background-color 0.3s ease, color 0.3s ease; /* Přechod mezi barvami */
+}
+
+/* Hover efekt pro tlačítka zoom */
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+    background-color: #45C08A; /* Tmavší zelená při přejetí */
+    color: #ffffff; /* Zachování bílé barvy textu */
+}

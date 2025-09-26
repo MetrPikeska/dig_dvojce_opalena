@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Opálená</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link type="text/css" rel="stylesheet" href="visual.css" />
+
+    <style>
+        body {
+            margin: 0;
+        }
+        html, body, #map {
+            height: 100%;
+        }
+        .find-location-btn, .coords-btn, .home-btn {
+            position: absolute;
+            right: 10px;
+            background-color: white;
+            border: 2px solid #4CAF50;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        .home-btn {
+            bottom: 110px;
+        }
+        .find-location-btn {
+            bottom: 80px;
+        }
+        .coords-btn {
+            bottom: 50px;
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<div class="home-btn" id="homeButton">Home</div>
+<div class="find-location-btn" id="findLocationButton">Najít mou polohu</div>
+<div class="coords-btn" id="toggleCoordsButton">Zapnout souřadnice</div>
+<script src="https://unpkg.com/leaflet/dist/leaflet-src.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Inicializace mapy
+        var homePoint = [49.5539331, 18.3145728]; // Domovská pozice (Pstruží)
+        var webcamPoint = [49.55469, 18.31718]; // Souřadnice pro webkameru
+        var map = L.map('map', {
+            center: homePoint,
+            zoom: 17
+        });
+
+        // API klíč
+        const API_KEY = '5ZtGuQEtvV37xyC_1IJnglc8ZgP53ehgvFqTiHuaFoI';
+
+        // Primární vrstva - ortofoto z Mapy.cz
+        var mapyletecka = L.tileLayer(`https://api.mapy.cz/v1/maptiles/aerial/256/{z}/{x}/{y}?apikey=${API_KEY}`, {
+            minZoom: 0,
+            maxZoom: 19,
+            attribution: '<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>',
+        }).addTo(map);
+
+        // Další vrstvy od Mapy.cz
+        var mapycz = L.tileLayer(`https://api.mapy.cz/v1/maptiles/basic/256/{z}/{x}/{y}?apikey=${API_KEY}`, {
+            minZoom: 0,
+            maxZoom: 19,
+            attribution: '<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>',
+        });
+
+        var mapywintercz = L.tileLayer(`https://api.mapy.cz/v1/maptiles/winter/256/{z}/{x}/{y}?apikey=${API_KEY}`, {
+            minZoom: 0,
+            maxZoom: 19,
+            attribution: '<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>',
+        });
+
+        var mapyoutdoor = L.tileLayer(`https://api.mapy.cz/v1/maptiles/outdoor/256/{z}/{x}/{y}?apikey=${API_KEY}`, {
+            minZoom: 0,
+            maxZoom: 19,
+            attribution: '<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>',
+        });
+
+        // WMS vrstva (reliéf)
+        var wmska = L.tileLayer.wms('https://ags.cuzk.cz/arcgis2/services/dmr4g/ImageServer/WMSServer?', {
+            layers: 'dmr4g:GrayscaleHillshade'
+        });
+
+        // WMS vrstva (Katastr nemovitostí)
+        var wmsKatastr = L.tileLayer.wms('http://services.cuzk.cz/wms/local-KM-wms.asp', {
+            layers: 'KN',
+            format: 'image/png',
+            transparent: true,
+            version: '1.1.1',
+            attribution: '&copy; ČÚZK'
+        });
+
+        // Vrstvy - potrubí, elektrické vedení, webkamery
+        var potrubi = L.circle([49.555, 18.31], {radius: 50, color: 'blue'}).bindPopup("Potrubí");
+        var elektrickeVedeni = L.polyline([[49.553, 18.31], [49.556, 18.315]], {color: 'red'}).bindPopup("Elektrické vedení");
+
+        // Přidání webkamerového markeru, ale výchozí stav je vypnutý
+        var webcamMarker = L.marker(webcamPoint).bindPopup("<a href='https://www.webcamlive.cz/web-kamera-ski-areal-opalena-273' target='_blank'>Webkamera - Skiareál Opálená</a>");
+
+        // Základní vrstvy map
+        var baseMaps = {
+            "mapy.cz základní": mapycz,
+            "mapy.cz zimní": mapywintercz,
+            "mapy.cz ortofoto": mapyletecka,
+            "mapy.cz turistická": mapyoutdoor,
+            "WMS Reliéf (5G)": wmska,
+            "Katastr nemovitostí": wmsKatastr
+        };
+
+        // Overlay vrstvy (defaultně vypnuté)
+        var overlayMaps = {
+            "Potrubí": potrubi,
+            "Elektrické vedení": elektrickeVedeni,
+            "Webkamery": webcamMarker // Webkamera není automaticky přidána na mapu, je vypnutá
+        };
+
+        // Ovládání vrstev
+        var layerControl = L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+        // Přidání měřítka
+        L.control.scale().addTo(map);
+
+        // Proměnná pro sledování stavu zobrazení souřadnic
+        var coordsEnabled = false;
+        var clickHandler;
+
+        // Funkce pro zapnutí a vypnutí zobrazení souřadnic
+        document.getElementById('toggleCoordsButton').addEventListener('click', function() {
+            if (!coordsEnabled) {
+                clickHandler = function(e) {
+                    var latlng = e.latlng;
+                    L.popup()
+                        .setLatLng(latlng)
+                        .setContent("Souřadnice: " + latlng.lat.toFixed(5) + ", " + latlng.lng.toFixed(5))
+                        .openOn(map);
+                };
+                map.on('click', clickHandler);
+                coordsEnabled = true;
+                document.getElementById('toggleCoordsButton').innerText = "Vypnout souřadnice";
+            } else {
+                map.off('click', clickHandler);
+                coordsEnabled = false;
+                document.getElementById('toggleCoordsButton').innerText = "Zapnout souřadnice";
+            }
+        });
+
+        // Funkce pro zobrazení aktuální polohy uživatele a její aktualizace každých 5 sekund
+        var userMarker, userCircle;
+
+        function updatePosition(lat, lng, accuracy) {
+            if (userMarker) {
+                map.removeLayer(userMarker);
+                map.removeLayer(userCircle);
+            }
+            userMarker = L.marker([lat, lng]).addTo(map)
+                .bindPopup("Vaše aktuální poloha").openPopup();
+            userCircle = L.circle([lat, lng], { radius: accuracy }).addTo(map);
+        }
+
+        document.getElementById('findLocationButton').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(function(position) {
+                    var lat = position.coords.latitude;
+                    var lng = position.coords.longitude;
+                    var accuracy = position.coords.accuracy;
+
+                    // Aktualizace markeru a kruhu pro aktuální polohu
+                    updatePosition(lat, lng, accuracy);
+
+                    // Automatické přiblížení na aktuální polohu
+                    map.setView([lat, lng], 17);
+                }, function() {
+                    alert("Nepodařilo se získat vaši polohu.");
+                }, {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                });
+            } else {
+                alert("Geolokace není podporována ve vašem prohlížeči.");
+            }
+        });
+
+        // Přidání tlačítka "Home" pro návrat na domovskou pozici
+        document.getElementById('homeButton').addEventListener('click', function() {
+            map.setView(homePoint, 17); // Nastavení mapy na domovskou pozici
+        });
+    });
+</script>
+</body>
+</html>

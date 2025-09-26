@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Opálená</title>
+    <meta charset="utf-8" />
+    <meta name="description" content="Webová aplikace pro Ski areál Opálená">
+    <meta name="keywords" content="HTML, CSS, JavaScript, Leaflet, Olomouc, Ortofoto, jQuery">
+    <meta name="author" content="Petr Mikeska">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link type="text/css" rel="stylesheet" href="visual.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+</head>
+<body>
+    <div id="header">
+        <h1>OPÁLENÁ</h1>
+        <h2>VYGEO PROJEKT </h2>
+    </div>
+    
+    <div id="map"></div>
+
+    <div class="home-btn" id="homeButton" title="Návrat na domovskou pozici"><i class="fas fa-home"></i></div>
+    <div class="find-location-btn" id="findLocationButton" title="Najít mou polohu"><i class="fas fa-map-marker-alt"></i></div>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet-src.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            var homePoint = [49.5539331, 18.3145728];
+            var webcamPoint = [49.55469, 18.31718];
+            
+            var map = L.map('map', {
+                center: homePoint,
+                zoom: 18
+            });
+
+            const API_KEY = '5ZtGuQEtvV37xyC_1IJnglc8ZgP53ehgvFqTiHuaFoI';
+
+            var dlazdice = L.tileLayer("https://gis.upol.cz/vkol_tiles/27426/{z}/{x}/{y}.png");
+
+            // Definice základních vrstev
+            var elektrickeVedeni = L.polyline([[49.553, 18.31], [49.556, 18.315]], { color: 'red' }).bindPopup("Elektrické vedení");
+            
+            var webcamMarker = L.marker(webcamPoint).bindPopup("<a href='https://www.webcamlive.cz/web-kamera-ski-areal-opalena-273' target='_blank'>Webkamera - Skiareál Opálená</a>");
+
+            var mapyletecka = L.tileLayer(`https://api.mapy.cz/v1/maptiles/aerial/256/{z}/{x}/{y}?apikey=${API_KEY}`, {
+                minZoom: 16,
+                maxZoom: 19,
+                attribution: '<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>',
+            }).addTo(map);
+
+            var mapycz = L.tileLayer(`https://api.mapy.cz/v1/maptiles/basic/256/{z}/{x}/{y}?apikey=${API_KEY}`, {
+                minZoom: 16,
+                maxZoom: 19,
+                attribution: '<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>',
+            });
+
+            var mapywintercz = L.tileLayer(`https://api.mapy.cz/v1/maptiles/winter/256/{z}/{x}/{y}?apikey=${API_KEY}`, {
+                minZoom: 16,
+                maxZoom: 19,
+                attribution: '<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>',
+            });
+
+            var mapyoutdoor = L.tileLayer(`https://api.mapy.cz/v1/maptiles/outdoor/256/{z}/{x}/{y}?apikey=${API_KEY}`, {
+                minZoom: 16,
+                maxZoom: 19,
+                attribution: '<a href="https://api.mapy.cz/copyright" target="_blank">&copy; Seznam.cz a.s. a další</a>',
+            });
+
+            var wmska = L.tileLayer.wms('https://ags.cuzk.cz/arcgis2/services/dmr4g/ImageServer/WMSServer?', {
+                layers: 'dmr4g:GrayscaleHillshade'
+            });
+
+            var wmsKatastr = L.tileLayer.wms('http://services.cuzk.cz/wms/local-KM-wms.asp', {
+                layers: 'KN',
+                format: 'image/png',
+                transparent: true,
+                version: '1.1.1',
+                attribution: '&copy; ČÚZK'
+            });
+
+            // Base mapy
+            var baseMaps = {
+                "mapy.cz základní": mapycz,
+                "mapy.cz zimní": mapywintercz,
+                "mapy.cz ortofoto": mapyletecka,
+                "mapy.cz turistická": mapyoutdoor,
+                "WMS Reliéf (5G)": wmska,
+                "Katastr nemovitostí": wmsKatastr
+            };
+
+            // Overlay mapy
+            var overlayMaps = {
+                "Elektrické vedení": elektrickeVedeni,
+                "Webkamery": webcamMarker,
+                "Ortofoto" :dlazdice
+            };
+
+            // Přidání layerControl
+            var layerControl = L.control.layers(baseMaps, overlayMaps).addTo(map);
+            
+            L.control.scale().addTo(map);
+
+            // Načtení GeoJSON souboru pro potrubí
+            $.getJSON('https://gist.githubusercontent.com/MetrPikeska/c2970d584b33128b942c408d0e4a3cbc/raw/144f15981f8042078817e29d7ab4d2b989d902cc/.geojson', function (data) {
+                var potrubi = L.geoJSON(data, {
+                    style: function (feature) {
+                        return { color: 'blue', weight: 2 };
+                    },
+                    onEachFeature: function (feature, layer) {
+                        layer.bindPopup("Potrubí: " + (feature.properties.name || "Název není dostupný"));
+                    }
+                });
+
+                overlayMaps["Potrubí"] = potrubi; // Přidání do overlayMaps
+                layerControl.addOverlay(potrubi, "Potrubí"); // Přidání do layerControl
+            });
+
+            // Načtení GeoJSON souboru pro vleky
+            $.getJSON('https://gist.githubusercontent.com/MetrPikeska/ca5795b2be4bddc3989b450284b1d8a9/raw/0485ce84414da1ee749439b051ef2ed3683f589a/vleky.geojson', function (data) {
+                var vleky = L.geoJSON(data, {
+                    style: function (feature) {
+                        return { color: 'red', weight: 3 }; // Styl pro vrstvu "Vleky"
+                    },
+                    onEachFeature: function (feature, layer) {
+                        layer.bindPopup("" + (feature.properties.typ || "Typ není dostupný"));
+                    }
+                });
+
+                overlayMaps["Vleky"] = vleky; // Přidání do overlayMaps
+                layerControl.addOverlay(vleky, "Vleky"); // Přidání do layerControl
+            });
+
+            document.getElementById('homeButton').addEventListener('click', function () {
+                map.setView(homePoint, 18);
+            });
+        });
+    </script>
+</body>
+</html>
