@@ -263,3 +263,19 @@ html, body, #map {
         font-size: 12px;
     }
 }
+#sheepInfo button {
+    margin-top: 5px;
+    background-color: #eeee22;
+    color: #007ddd;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#sheepInfo button:hover {
+    background-color: #007ddd;
+    color: #ffffff;
+}
+

@@ -15,18 +15,29 @@
         <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
         <script src="https://unpkg.com/leaflet/dist/leaflet-src.js"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     </head>
     
 <body>
     <div id="header">
-        <h1>SKI ARffffffffffEÁL OPÁLENÁ</h1>
+        <h1>SKI AREÁL OPÁLENÁ</h1>
         <h2>VYGEO PROJEKT</h2>
     </div>
     
     <div id="sheepInfo">
         <span class="count">–</span>
         <span class="label">Počet ovcí na svahu</span>
+        <br>
+        <button id="showGraphBtn">Zobrazit graf</button>
+    </div>
+
+    <!-- Modal pro graf -->
+    <div id="graphModal" style="display:none; position:fixed; top:10%; left:10%; width:80%; height:70%; background:white; border:2px solid #007ddd; border-radius:10px; padding:20px; z-index:2000; overflow:auto;">
+        <h3>Statistika počtu ovcí</h3>
+        <canvas id="sheepChart"></canvas>
+        <br>
+        <button onclick="document.getElementById('graphModal').style.display='none'">Zavřít</button>
     </div>
 
     <div id="map"></div>
@@ -144,7 +155,6 @@
             attribution: '&copy; ČÚZK'
         });
             
-
         const baseMaps = {
             "mapy.cz základní": mapycz,
             "mapy.cz zimní": mapywintercz,
@@ -217,14 +227,50 @@
                 .then(res => res.json())
                 .then(data => {
                     const count = data.count || 0;
-                    updateSheepCount(count);   // aktualizuje text v #sheepInfo
-                    updateVlekyColor(count);   // změní barvu vrstev
+                    updateSheepCount(count);
+                    updateVlekyColor(count);
                 })
                 .catch(err => console.error("Chyba při načítání z hostingu:", err));
         }
 
-        // Každých 5 sekund dotaz na hosting
-        setInterval(fetchSheepFromHosting, 5000);
+        // Každé 2 sekundy dotaz na hosting
+        setInterval(fetchSheepFromHosting, 2000);
+
+        // --- Ovládání grafu ---
+        document.getElementById('showGraphBtn').addEventListener('click', function () {
+            document.getElementById('graphModal').style.display = 'block';
+
+            fetch('get_sheep.php?history=1')  // uprav PHP, aby vracel pole [{timestamp, count}, ...]
+                .then(res => res.json())
+                .then(data => {
+                    const labels = data.map(d => d.timestamp);
+                    const counts = data.map(d => d.count);
+
+                    const ctx = document.getElementById('sheepChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Počet ovcí',
+                                data: counts,
+                                borderColor: 'blue',
+                                backgroundColor: 'rgba(0,125,221,0.2)',
+                                tension: 0.3,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: { title: { display: true, text: 'Čas' } },
+                                y: { title: { display: true, text: 'Počet ovcí' }, beginAtZero: true }
+                            }
+                        }
+                    });
+                })
+                .catch(err => console.error("Chyba při načítání historie:", err));
+        });
 
         });
     </script>
